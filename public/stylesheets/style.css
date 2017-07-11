@@ -46,10 +46,10 @@ tr:hover * {
     color: mintcream;
 }
 a {
-    text-decoration: none;   
+    text-decoration: none;
 }
 @keyframes blink {
-  25% { 
+  25% {
     opacity: 0.75;
   }
   50% {
@@ -67,7 +67,7 @@ a {
 }
 
 .untriaged {
-    text-align: center;
+    text-align: right;
 }
 
 .risk1 {
