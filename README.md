@@ -1,4 +1,4 @@
-# triage-report
-Report on Components in Each Firefox-Related Product With Untriaged Bugs
+# Firefox layout triage-report
+Report on Firefox layout components with untriaged bugs
 
-https://mozilla.github.io/triage-report/
+https://astleychen.github.io/triage-report/

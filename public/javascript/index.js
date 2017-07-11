@@ -7,16 +7,40 @@
     var productList = [
           "Core"
         , "Firefox"
-        , "Firefox for Android"
-        , "Firefox for iOS"
         , "Toolkit"
     ];
-    var encodedProductListFragment = productList.reduce((str, product) => str + `&product=${encodeURIComponent(product)}`, '');
+    var componentList = [
+          "Layout"
+        , "CSS Parsing and Computation"
+        , "SVG"
+        , "Layout: Text"
+        , "Layout: Web Painting"
+        , "Selection"
+        , "Printing: Output"
+        , "Graphics: Text"
+        , "Layout: Block and Inline"
+        , "Layout: Tables"
+        , "Layout: View Rendering"
+        , "Layout: Images"
+        , "Print Preview"
+        , "Layout: Floats"
+        , "DOM: CSS Object Model"
+        , "Layout: R & A Pos"
+        , "DOM: Animation"
+        , "Layout: HTML Frames"
+        , "Layout: Misc Code"
+        , "Printing"
+        , "PDF Viewer"
+    ];
+    var encodedProductListFragment =
+        productList.reduce((str, product) => str + `&product=${encodeURIComponent(product)}`, '');
+    var encodedComponentListFragment =
+        componentList.reduce((str, component) => str + `&component=${encodeURIComponent(component)}`, '');
 
     // shared parameters
     var sharedParameters = Object.entries({
           'chfieldfrom': '2016-06-01',
-          'chfieldto': 'NOW', 
+          'chfieldto': 'NOW',
           'f1': 'flagtypes.name',
           'o1': 'notequals',
           'resolution': '---',
@@ -25,21 +49,24 @@
           'emailtype1': 'notequals',
           'emailreporter1': 1
     }).reduce((str, [key, value]) => str + `&${key}=${encodeURIComponent(value)}`, '');
-    
-    // base bugzilla API query 
-    var baseAPIRequest = 'https://bugzilla.mozilla.org/rest/bug?' + 
+
+    // base bugzilla API query
+    var baseAPIRequest = 'https://bugzilla.mozilla.org/rest/bug?' +
                          'include_fields=id,priority,product,component,creation_time' +
-                         '&chfield=[Bug%20creation]' + 
-                         encodedProductListFragment + sharedParameters + 
+                         '&chfield=[Bug%20creation]' +
+                         encodedProductListFragment +
+                         encodedComponentListFragment +
+                         sharedParameters +
                          '&o4=greaterthan&f4=bug_id&limit=' + limit;
 
     var reportDetailRequest = 'https://bugzilla.mozilla.org/buglist.cgi?chfield=[Bug%20creation]' +
-        sharedParameters; 
+        sharedParameters;
 
     // convenience method for making links
     function buglistLink(value, product, component, priority) {
         priority = priority || null;
-        var url = `${reportDetailRequest}&product=${encodeURIComponent(product)}&component=${encodeURIComponent(component)}`;
+        var url =
+            `${reportDetailRequest}&product=${encodeURIComponent(product)}&component=${encodeURIComponent(component)}`;
         if (priority) {
             url = `${url}&priority=${priority}`;
         }
@@ -55,28 +82,28 @@
 
     if (!fetch) {
         view.innerHTML = "Your browser does not support the fetch standard, which is needed to load this page.";
-        return;        
+        return;
     }
 
     // This recursively fetches all the open bugs in Firefox related components opened since June 1st, 2016
     // which don't have a pending needinfo, and are not in the general and untriaged components
-    // this does not include security filtered bugs 
+    // this does not include security filtered bugs
 
 
     function getBugs(last) {
         var newLast;
         fetch(baseAPIRequest + '&v4=' + last)
-            .then(function(response) { // $DEITY, I can't wait for await 
-                if (response.ok) {  
+            .then(function(response) { // $DEITY, I can't wait for await
+                if (response.ok) {
                     response.json()
                     .then(function(data) {
                         newLast = data.bugs[data.bugs.length - 1].id;
-                        /* 
+                        /*
                             There are two ways we can fall out of this recursion: if the total
-                            number of bugs is evenly divisible by limit (edge case) then we'll 
+                            number of bugs is evenly divisible by limit (edge case) then we'll
                             err on fetching a result set twice, but not adding it, or if the number
                             of bugs in the batch returned is less than the limit, we'll add the last
-                            batch and stop 
+                            batch and stop
                         */
                         if (newLast != last) {
                             completed ++;
@@ -84,7 +111,7 @@
                             Array.prototype.push.apply(result.bugs, data.bugs); // call push on each result.bugs
                             if (data.bugs.length === limit) {
                                 console.log("calling again with last", newLast);
-                                getBugs(newLast); // recursively call using the id of the last bug in the results as last                               
+                                getBugs(newLast); // recursively call using the id of the last bug in the results as last
                             } else {
                                 console.log("less bugs than limit");
                                 complete();
@@ -133,7 +160,7 @@
         result.bugs.forEach((bug, i) => {
             // count bugs by product, component, and priority
             if (!data[bug.product]) {
-                data[bug.product] = {}; // add new product   
+                data[bug.product] = {}; // add new product
             }
             if (!data[bug.product][bug.component]) {
                 data[bug.product][bug.component] = { // add new component
@@ -159,7 +186,7 @@
             if (bug.priority === '--') {
                 dateFiled = new Date(bug.creation_time);
                 monthNum = dateFiled.getUTCMonth() + 1;
-                // left pad 
+                // left pad
                 if (monthNum < 10) {
                     monthNum = '0' + monthNum;
                 }
@@ -193,7 +220,7 @@
             }
         });
 
-        // generate a report by product of the components sorted 
+        // generate a report by product of the components sorted
         // by the most untriaged bugs, descending
         Object.keys(data).forEach(product => {
             var list = [];
@@ -207,7 +234,7 @@
 
         Object.keys(report).forEach(product => {
             reportRows = reportRows + `<tbody>`;
-            report[product].forEach(item => {  
+            report[product].forEach(item => {
                 var component = item.component;
                 var riskClass = risk(data[product][component]['--']);
                 reportRows = reportRows + `<tr>
@@ -221,7 +248,7 @@
                     <td>${buglistLink(data[product][component].total, product, component)}</td>
                 </tr>`;
             });
-            reportRows = reportRows + `</tbody>`;        
+            reportRows = reportRows + `</tbody>`;
         });
 
         // glue it all together
@@ -235,7 +262,7 @@
                         <td>${all.P3}</td>
                         <td>${all.P4}</td>
                         <td>${all.P5}</td>
-                        <td>${all.total}</td>                   
+                        <td>${all.total}</td>
                     </tr>
                </tbody>
                <tbody>
@@ -246,7 +273,7 @@
                         <td>${allNotGeneral.P3}</td>
                         <td>${allNotGeneral.P4}</td>
                         <td>${allNotGeneral.P5}</td>
-                        <td>${allNotGeneral.total}</td>  
+                        <td>${allNotGeneral.total}</td>
                </tbody>`;
 
         // put the report in the document
@@ -261,7 +288,7 @@
         monthList = monthList.sort();
         nMonths = monthList.length;
 
-        // generate a report by product of the components sorted 
+        // generate a report by product of the components sorted
         // by the most untriaged bugs, descending, and track the
         // largest value across all products, components, and months
         Object.keys(dateData).forEach(product => {
@@ -303,7 +330,7 @@
                     sum += count * i;
                     i--;
                 });
-                
+
                 dateReportRows += `<td class="sparkline">${sparkline(sparkdata, {min: 0, max: max, html: true})}</td>`;
 
                 dateReportRows += `<td>${Math.round(sum/item.untriaged)}</td>`;
